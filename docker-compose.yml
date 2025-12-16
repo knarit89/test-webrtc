@@ -1,0 +1,72 @@
+# ═══════════════════════════════════════════════════════════════
+# docker-compose.yml สำหรับ WebRTC Messaging Demo
+# ═══════════════════════════════════════════════════════════════
+# ใช้ docker-compose เพื่อรัน application ได้ง่ายขึ้น
+
+version: '3.8'
+
+# ──────────────────────────────────────────────────────────────
+# Services Definition
+# ──────────────────────────────────────────────────────────────
+services:
+  # ────────────────────────────────────────────────────────────
+  # WebRTC Signalling Server
+  # ────────────────────────────────────────────────────────────
+  webrtc-server:
+    # ชื่อ service นี้ว่า webrtc-server
+    
+    # ชื่อ container ที่จะสร้าง
+    container_name: webrtc-signalling-server
+    
+    # Build จาก Dockerfile ในโฟลเดอร์ปัจจุบัน
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # ชื่อ image ที่จะสร้าง
+    image: webrtc-messaging-demo:1.0.0
+    
+    # Port mapping: host:container
+    # เข้าถึงได้ที่ http://localhost:3000
+    ports:
+      - "3000:3000"
+    
+    # Environment Variables
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    
+    # Restart Policy
+    # always = restart อัตโนมัติถ้า crash หรือ reboot
+    restart: unless-stopped
+    
+    # Health Check
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Logging Configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"      # ไฟล์ log สูงสุด 10MB
+        max-file: "3"        # เก็บไฟล์ log สูงสุด 3 ไฟล์
+
+# ──────────────────────────────────────────────────────────────
+# Networks (Optional)
+# ──────────────────────────────────────────────────────────────
+# ถ้าต้องการสร้าง custom network
+# networks:
+#   webrtc-network:
+#     driver: bridge
+
+# ──────────────────────────────────────────────────────────────
+# Volumes (Optional)
+# ──────────────────────────────────────────────────────────────
+# ถ้าต้องการเก็บ logs หรือ data ถาวร
+# volumes:
+#   webrtc-logs:
+#     driver: local
